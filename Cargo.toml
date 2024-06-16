@@ -1,0 +1,6 @@
+[package]
+name = "sbox_rust-web-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
