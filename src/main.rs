@@ -1,7 +1,23 @@
-fn main() {
-    let result = handler().unwrap();
-    println!("{:?}", result);
+use lambda_runtime::{service_fn, LambdaEvent};
+use serde_json::{json, Value};
+
+#[tokio::main]
+async fn main() -> Result<(), lambda_runtime::Error> {
+    lambda_runtime::run(service_fn(lambda_handler)).await?;
+    Ok(())
 }
+
+async fn lambda_handler(event: LambdaEvent<Value>) -> Result<Value, lambda_runtime::Error> {
+    // payloadやらcontextをparseしたりvalidationしたりする
+    println!("{:?}", event);
+    let result = handler().unwrap();
+    Ok(json!({ "result": result }))
+}
+
+// fn main() {
+//     let result = handler().unwrap();
+//     println!("{:?}", result);
+// }
 
 fn handler() -> Result<String, Box<dyn std::error::Error>> {
     let body = reqwest::blocking::get("https://www.example.com")?.text()?;
