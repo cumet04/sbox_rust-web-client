@@ -1,4 +1,9 @@
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
+    let result = handler().unwrap();
+    println!("{:?}", result);
+}
+
+fn handler() -> Result<String, Box<dyn std::error::Error>> {
     let body = reqwest::blocking::get("https://www.example.com")?.text()?;
     println!("{body}");
     println!("=====");
@@ -7,7 +12,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let selector = scraper::Selector::parse("div > p > a").unwrap();
     let elements = document.select(&selector);
 
-    elements.for_each(|e| println!("{}", e.text().next().unwrap()));
+    let result = elements
+        .map(|e| e.text().next().unwrap())
+        .collect::<Vec<_>>()
+        .join("\n");
 
-    return Ok(());
+    return Ok(result);
 }
