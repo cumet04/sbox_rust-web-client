@@ -1,17 +1,24 @@
-use lambda_runtime::{service_fn, LambdaEvent};
-use serde_json::{json, Value};
+use lambda_http::{run, service_fn, tracing, Body, Error, Request, Response};
+use serde_json::json;
 
 #[tokio::main]
-async fn main() -> Result<(), lambda_runtime::Error> {
-    lambda_runtime::run(service_fn(lambda_handler)).await?;
-    Ok(())
+async fn main() -> Result<(), Error> {
+    tracing::init_default_subscriber();
+    run(service_fn(lambda_handler)).await
 }
 
-async fn lambda_handler(event: LambdaEvent<Value>) -> Result<Value, lambda_runtime::Error> {
+async fn lambda_handler(event: Request) -> Result<Response<Body>, Error> {
     // payloadやらcontextをparseしたりvalidationしたりする
     println!("{:?}", event);
     let result = handler().unwrap();
-    Ok(json!({ "result": result }))
+
+    let resp = Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(json!({"result": result}).to_string().into())
+        .map_err(Box::new)?;
+
+    Ok(resp)
 }
 
 // fn main() {
