@@ -1,16 +1,10 @@
-use lambda_http::{run, service_fn, tracing, Body, Error, Request, Response};
+use lambda_http::{Body, Error, Request, Response};
 use serde_json::json;
-
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    tracing::init_default_subscriber();
-    run(service_fn(lambda_handler)).await
-}
 
 async fn lambda_handler(event: Request) -> Result<Response<Body>, Error> {
     // payloadやらcontextをparseしたりvalidationしたりする
     println!("{:?}", event);
-    let result = handler().unwrap();
+    let result = handler().await?;
 
     let resp = Response::builder()
         .status(200)
@@ -21,13 +15,11 @@ async fn lambda_handler(event: Request) -> Result<Response<Body>, Error> {
     Ok(resp)
 }
 
-// fn main() {
-//     let result = handler().unwrap();
-//     println!("{:?}", result);
-// }
-
-fn handler() -> Result<String, Box<dyn std::error::Error>> {
-    let body = reqwest::blocking::get("https://www.example.com")?.text()?;
+async fn handler() -> Result<String, Error> {
+    let body = reqwest::get("https://www.example.com")
+        .await?
+        .text()
+        .await?;
     println!("{body}");
     println!("=====");
 
@@ -41,4 +33,22 @@ fn handler() -> Result<String, Box<dyn std::error::Error>> {
         .join("\n");
 
     return Ok(result);
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    lambda_http::tracing::init_default_subscriber();
+    lambda_http::run(lambda_http::service_fn(lambda_handler)).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_no_input() {
+        let event = Request::default();
+        let result = lambda_handler(event).await;
+        assert!(result.is_ok(), "error: {:?}", result.err());
+    }
 }
