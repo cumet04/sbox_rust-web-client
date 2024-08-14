@@ -1,4 +1,5 @@
 use lambda_http::{Body, Error, Request, Response};
+use serde::Deserialize;
 use serde_json::json;
 
 async fn lambda_handler(event: Request) -> Result<Response<Body>, Error> {
@@ -15,22 +16,36 @@ async fn lambda_handler(event: Request) -> Result<Response<Body>, Error> {
     Ok(resp)
 }
 
-async fn handler() -> Result<String, Error> {
-    let body = reqwest::get("https://www.example.com")
-        .await?
-        .text()
+#[derive(Deserialize, Debug)]
+struct Repo {
+    name: String,
+}
+
+async fn handler() -> Result<Vec<String>, Error> {
+    let user = "cumet04";
+    let per_page = 5;
+    let url = format!(
+        "https://api.github.com/users/{}/repos?per_page={}",
+        user, per_page
+    );
+
+    let body = reqwest::Client::new()
+        .get(url)
+        .header("User-Agent", "cumet04/sbox_rust-web-client") // GitHub APIではなんらかのUAが必須 refs https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
+        .header("Accept", "application/vnd.github+json")
+        .header("X-GitHub-Api-Version", "2022-11-28")
+        .send()
         .await?;
-    println!("{body}");
-    println!("=====");
+    if !body.status().is_success() {
+        return Err(Error::from(format!(
+            "Request failed with status code: {}, body:\n{}",
+            body.status(),
+            body.text().await.unwrap()
+        )));
+    }
+    let json: Vec<Repo> = body.json().await?;
 
-    let document = scraper::Html::parse_document(&body);
-    let selector = scraper::Selector::parse("div > p > a").unwrap();
-    let elements = document.select(&selector);
-
-    let result = elements
-        .map(|e| e.text().next().unwrap())
-        .collect::<Vec<_>>()
-        .join("\n");
+    let result = json.iter().map(|repo| repo.name.clone()).collect();
 
     return Ok(result);
 }
@@ -50,5 +65,6 @@ mod tests {
         let event = Request::default();
         let result = lambda_handler(event).await;
         assert!(result.is_ok(), "error: {:?}", result.err());
+        print!("test_no_input.result = {:?}", result);
     }
 }
