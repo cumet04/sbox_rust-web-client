@@ -61,10 +61,10 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_no_input() {
+    async fn test_lambda_handler_no_input() {
         let event = Request::default();
         let result = lambda_handler(event).await;
         assert!(result.is_ok(), "error: {:?}", result.err());
-        print!("test_no_input.result = {:?}", result);
+        println!("test_no_input.result = {:?}", result);
     }
 }
