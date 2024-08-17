@@ -976,11 +976,13 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 name = "sbox_rust-web-client"
 version = "0.1.0"
 dependencies = [
+ "http",
  "lambda_http",
  "reqwest",
  "serde",
  "serde_json",
  "tokio",
+ "url",
 ]
 
 [[package]]
